@@ -17,11 +17,11 @@ const rateLimitBucket = new Map<string, { count: number; windowStart: number }>(
 const replayGuard = new Map<string, number>();
 
 function cleanReplayGuard(now: number) {
-  for (const [key, ts] of replayGuard.entries()) {
+  replayGuard.forEach((ts, key) => {
     if (now - ts > REPLAY_WINDOW_MS) {
       replayGuard.delete(key);
     }
-  }
+  });
 }
 
 export function enforceRateLimit(identifier: string): boolean {
