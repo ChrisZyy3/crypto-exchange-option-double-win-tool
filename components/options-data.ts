@@ -20,7 +20,6 @@ export interface OptionMarketItem {
   settlementDate: string;
   daysToSettlement: number;
   apr: number;
-  tag?: string;
 }
 
 export const assetSpotPrice: Record<AssetSymbol, number> = {
@@ -36,8 +35,7 @@ export const optionMarkets: OptionMarketItem[] = [
     targetPrice: 94000,
     settlementDate: "2025-12-05 07:59",
     daysToSettlement: 1,
-    apr: 376.86,
-    tag: "VIP 可用"
+    apr: 376.86
   },
   {
     id: "btc-low-93000-1d",
@@ -73,8 +71,7 @@ export const optionMarkets: OptionMarketItem[] = [
     targetPrice: 97000,
     settlementDate: "2025-12-05 07:59",
     daysToSettlement: 1,
-    apr: 210.42,
-    tag: "高卖"
+    apr: 210.42
   },
   {
     id: "btc-high-99000-3d",
