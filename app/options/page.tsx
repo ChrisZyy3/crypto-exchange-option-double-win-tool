@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const durationFilters = [
   { label: "全部期限", value: "all" },
@@ -54,24 +52,33 @@ export default function OptionsPage() {
           }}
         />
         <Card className="border-0 bg-transparent shadow-none">
-          <Tabs value={asset} onValueChange={(value) => setAsset(value as AssetSymbol)}>
-            <TabsList className="w-full overflow-auto">
-              <TabsTrigger value="BTC">BTC 产品</TabsTrigger>
-              <TabsTrigger value="ETH">ETH 产品</TabsTrigger>
-            </TabsList>
-            <TabsContent value={asset} className="mt-6">
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredProducts.map((product) => (
-                  <OptionCard key={product.id} product={product} />
-                ))}
-              </div>
-              {filteredProducts.length === 0 && (
-                <div className="mt-6 rounded-xl border bg-white p-6 text-center text-slate-500">
-                  暂无符合条件的产品，请调整筛选。
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-3">
+            {(["BTC", "ETH"] as AssetSymbol[]).map((symbol) => (
+              <button
+                key={symbol}
+                onClick={() => setAsset(symbol)}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
+                  asset === symbol
+                    ? "bg-white text-slate-900 shadow"
+                    : "bg-slate-100 text-slate-600 hover:bg-white"
+                }`}
+                type="button"
+              >
+                {symbol} 产品
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredProducts.map((product) => (
+              <OptionCard key={product.id} product={product} />
+            ))}
+          </div>
+          {filteredProducts.length === 0 && (
+            <div className="mt-6 rounded-xl border bg-white p-6 text-center text-slate-500">
+              暂无符合条件的产品，请调整筛选。
+            </div>
+          )}
         </Card>
       </section>
     </div>
@@ -96,30 +103,28 @@ function FilterPanel({ duration, sortKey, onDurationChange, onSortChange, onRese
       <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         <div className="space-y-1">
           <Label>期限</Label>
-          <Select value={duration} onValueChange={onDurationChange}>
-            <SelectTrigger className="w-full min-w-[160px]">
-              <SelectValue placeholder="选择期限" />
-            </SelectTrigger>
-            <SelectContent>
-              {durationFilters.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            className="h-10 w-full min-w-[160px] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            value={duration}
+            onChange={(event) => onDurationChange(event.target.value)}
+          >
+            {durationFilters.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-1">
           <Label>排序</Label>
-          <Select value={sortKey} onValueChange={onSortChange}>
-            <SelectTrigger className="w-full min-w-[160px]">
-              <SelectValue placeholder="排序方式" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="apr">APR 由高到低</SelectItem>
-              <SelectItem value="tenor">期限由近到远</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            className="h-10 w-full min-w-[160px] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            value={sortKey}
+            onChange={(event) => onSortChange(event.target.value)}
+          >
+            <option value="apr">APR 由高到低</option>
+            <option value="tenor">期限由近到远</option>
+          </select>
         </div>
         <div className="space-y-1">
           <Label htmlFor="notional">示例名义本金 (USDT)</Label>
