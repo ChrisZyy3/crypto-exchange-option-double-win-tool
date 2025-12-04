@@ -4,26 +4,34 @@ import { useMemo, useState } from "react";
 
 import Hero from "@/components/sections/hero";
 import type { HeroCopy } from "@/components/sections/hero";
-import { assetSpotPrice, optionMarkets, type AssetSymbol, type OptionDirection } from "@/components/options-data";
+import { optionMarkets, type AssetSymbol, type OptionDirection } from "@/components/options-data";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useBybitIndexPrice } from "@/lib/use-bybit-index-price";
 
 type Language = "en" | "zh";
 
-const assetPerformance = {
-  BTC: { price: 61280, status: { en: "Trending well", zh: "趋势良好" } },
-  ETH: { price: 3320, status: { en: "Trending well", zh: "趋势良好" } },
-  BNB: { price: 560, status: { en: "Stable", zh: "稳定" } }
+const defaultSpotPrice: Record<AssetSymbol, number> = {
+  BTC: 61280,
+  ETH: 3320
 };
 
-const formatPrice = (value: number) => `$${value.toLocaleString()}`;
+const formatPrice = (value: number | null | undefined) =>
+  typeof value === "number" ? `$${value.toLocaleString()}` : "-";
 
 const translations: Record<
   Language,
   {
-    hero: HeroCopy;
+    hero: Omit<HeroCopy, "stats"> & {
+      liveStatus: string;
+      loadingStatus: string;
+      fallbackStatus: string;
+      bnbStatus: string;
+      labels: { btc: string; eth: string; bnb: string };
+    };
     controls: {
       assetPrice: string;
+      assetPriceLoading: string;
       directionTabs: { value: OptionDirection; label: string; description: string }[];
       tenorLabel: string;
       tenorFilters: { label: string; value: string }[];
@@ -44,15 +52,16 @@ const translations: Record<
       subtitle:
         "Mobile-friendly ordering. All signing and risk checks run through a Next.js API Route proxy so secrets stay off the browser.",
       performanceLabel: "Asset performance",
-      realtimeLabel: "Live index snapshot",
-      stats: [
-        { label: "BTC", value: formatPrice(assetPerformance.BTC.price), status: assetPerformance.BTC.status.en },
-        { label: "ETH", value: formatPrice(assetPerformance.ETH.price), status: assetPerformance.ETH.status.en },
-        { label: "BNB", value: formatPrice(assetPerformance.BNB.price), status: assetPerformance.BNB.status.en }
-      ]
+      realtimeLabel: "Live index snapshot (proxied from Bybit)",
+      liveStatus: "Live price",
+      loadingStatus: "Loading live price...",
+      fallbackStatus: "Using fallback snapshot",
+      bnbStatus: "Manual entry",
+      labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
     controls: {
       assetPrice: "Index price",
+      assetPriceLoading: "Loading price...",
       directionTabs: [
         { value: "lowBuy", label: "Buy Low", description: "Bid below spot to earn premium" },
         { value: "highSell", label: "Sell High", description: "Offer above spot to earn premium" }
@@ -80,15 +89,16 @@ const translations: Record<
       title: "即刻选择 BTC / ETH 期权，享受双币宝式收益体验",
       subtitle: "前端优先、移动端友好的下单体验。所有签名与风控通过 Next.js API Route 代为处理，确保密钥不落地浏览器。",
       performanceLabel: "资产表现",
-      realtimeLabel: "实时指数价占位",
-      stats: [
-        { label: "BTC", value: formatPrice(assetPerformance.BTC.price), status: assetPerformance.BTC.status.zh },
-        { label: "ETH", value: formatPrice(assetPerformance.ETH.price), status: assetPerformance.ETH.status.zh },
-        { label: "BNB", value: formatPrice(assetPerformance.BNB.price), status: assetPerformance.BNB.status.zh }
-      ]
+      realtimeLabel: "通过代理获取的实时指数价",
+      liveStatus: "实时价格",
+      loadingStatus: "正在获取价格...",
+      fallbackStatus: "使用预设价格",
+      bnbStatus: "手动录入",
+      labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
     controls: {
       assetPrice: "指数价",
+      assetPriceLoading: "获取中...",
       directionTabs: [
         { value: "lowBuy", label: "低买", description: "低于当前价格买入，赚取权利金" },
         { value: "highSell", label: "高卖", description: "高于当前价格卖出，赚取权利金" }
@@ -120,6 +130,54 @@ export default function OptionsPage() {
 
   const t = translations[language];
 
+  const {
+    data: btcIndex,
+    isLoading: isBtcLoading,
+    error: btcError
+  } = useBybitIndexPrice("BTC");
+  const {
+    data: ethIndex,
+    isLoading: isEthLoading,
+    error: ethError
+  } = useBybitIndexPrice("ETH");
+
+  const priceLookup: Record<AssetSymbol, number> = {
+    BTC: btcIndex?.price ?? defaultSpotPrice.BTC,
+    ETH: ethIndex?.price ?? defaultSpotPrice.ETH
+  };
+
+  const assetStatuses: Record<AssetSymbol, string> = {
+    BTC: isBtcLoading ? t.hero.loadingStatus : btcIndex && !btcError ? t.hero.liveStatus : t.hero.fallbackStatus,
+    ETH: isEthLoading ? t.hero.loadingStatus : ethIndex && !ethError ? t.hero.liveStatus : t.hero.fallbackStatus
+  };
+
+  const heroStats: HeroCopy["stats"] = [
+    {
+      label: t.hero.labels.btc,
+      value: formatPrice(btcIndex?.price ?? defaultSpotPrice.BTC),
+      status: assetStatuses.BTC
+    },
+    {
+      label: t.hero.labels.eth,
+      value: formatPrice(ethIndex?.price ?? defaultSpotPrice.ETH),
+      status: assetStatuses.ETH
+    },
+    {
+      label: t.hero.labels.bnb,
+      value: formatPrice(560),
+      status: t.hero.bnbStatus
+    }
+  ];
+
+  const heroCopy: HeroCopy = {
+    badge: t.hero.badge,
+    title: t.hero.title,
+    subtitle: t.hero.subtitle,
+    performanceLabel: t.hero.performanceLabel,
+    realtimeLabel: t.hero.realtimeLabel,
+    stats: heroStats
+  };
+
   const products = useMemo(() => {
     return optionMarkets.filter((item) => {
       const matchesAsset = item.asset === asset;
@@ -129,7 +187,8 @@ export default function OptionsPage() {
     });
   }, [asset, direction, tenor]);
 
-  const currentSpot = assetSpotPrice[asset];
+  const currentSpot = priceLookup[asset];
+  const isAssetLoading = asset === "BTC" ? isBtcLoading : isEthLoading;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -142,7 +201,7 @@ export default function OptionsPage() {
           {t.controls.languageToggle}
         </button>
       </div>
-      <Hero copy={t.hero} />
+      <Hero copy={heroCopy} />
       <section className="container mt-8 flex flex-col gap-5 pb-14">
         <Card className="border border-slate-200/80 bg-white/90 p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -163,7 +222,11 @@ export default function OptionsPage() {
               ))}
             </div>
             <div className="text-sm text-slate-600">
-              {t.controls.assetPrice} {currentSpot.toLocaleString()} USDT
+              {t.controls.assetPrice}{" "}
+              <span className="font-semibold text-slate-900">{currentSpot.toLocaleString()} USDT</span>
+              <span className="ml-2 text-xs text-slate-500">
+                {isAssetLoading ? t.controls.assetPriceLoading : assetStatuses[asset]}
+              </span>
             </div>
           </div>
 
