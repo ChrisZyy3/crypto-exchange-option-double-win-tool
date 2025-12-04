@@ -1,83 +1,140 @@
 export type AssetSymbol = "BTC" | "ETH";
-export type OptionType = "call" | "put";
+export type OptionDirection = "lowBuy" | "highSell";
 
-export interface OptionProduct {
+export interface OptionMarketItem {
   id: string;
   asset: AssetSymbol;
-  strike: number;
-  daysToExpiry: number;
-  expiryLabel: string;
+  direction: OptionDirection;
+  targetPrice: number;
+  settlementDate: string;
+  daysToSettlement: number;
   apr: number;
-  markPrice: number;
-  payoffDescription: string;
-  type: OptionType;
+  tag?: string;
 }
 
-export const optionProducts: OptionProduct[] = [
+export const assetSpotPrice: Record<AssetSymbol, number> = {
+  BTC: 94001.12,
+  ETH: 3320.45
+};
+
+export const optionMarkets: OptionMarketItem[] = [
   {
-    id: "btc-1w-60000-call",
+    id: "btc-low-94000-1d",
     asset: "BTC",
-    strike: 60000,
-    daysToExpiry: 7,
-    expiryLabel: "7 天后到期",
-    apr: 11.8,
-    markPrice: 61280,
-    payoffDescription: "到期价 \u2265 60,000 USDT 自动买入或获利",
-    type: "call"
+    direction: "lowBuy",
+    targetPrice: 94000,
+    settlementDate: "2025-12-05 07:59",
+    daysToSettlement: 1,
+    apr: 376.86,
+    tag: "VIP 可用"
   },
   {
-    id: "btc-2w-62000-call",
+    id: "btc-low-93000-1d",
     asset: "BTC",
-    strike: 62000,
-    daysToExpiry: 14,
-    expiryLabel: "14 天后到期",
-    apr: 13.2,
-    markPrice: 61280,
-    payoffDescription: "到期价 \u2265 62,000 USDT 获得行权收益",
-    type: "call"
+    direction: "lowBuy",
+    targetPrice: 93000,
+    settlementDate: "2025-12-05 07:59",
+    daysToSettlement: 1,
+    apr: 241.93
   },
   {
-    id: "btc-1m-64000-call",
+    id: "btc-low-92000-1d",
     asset: "BTC",
-    strike: 64000,
-    daysToExpiry: 30,
-    expiryLabel: "30 天后到期",
-    apr: 15.1,
-    markPrice: 61280,
-    payoffDescription: "更高行权价换取更高 APR",
-    type: "call"
+    direction: "lowBuy",
+    targetPrice: 92000,
+    settlementDate: "2025-12-05 07:59",
+    daysToSettlement: 1,
+    apr: 180.25
   },
   {
-    id: "eth-1w-3200-call",
-    asset: "ETH",
-    strike: 3200,
-    daysToExpiry: 7,
-    expiryLabel: "7 天后到期",
-    apr: 9.6,
-    markPrice: 3320,
-    payoffDescription: "到期价 \u2265 3,200 USDT 自动买入或获利",
-    type: "call"
+    id: "btc-low-95000-3d",
+    asset: "BTC",
+    direction: "lowBuy",
+    targetPrice: 95000,
+    settlementDate: "2025-12-07 07:59",
+    daysToSettlement: 3,
+    apr: 148.55
   },
   {
-    id: "eth-2w-3400-call",
-    asset: "ETH",
-    strike: 3400,
-    daysToExpiry: 14,
-    expiryLabel: "14 天后到期",
-    apr: 11.4,
-    markPrice: 3320,
-    payoffDescription: "到期价 \u2265 3,400 USDT 获得行权收益",
-    type: "call"
+    id: "btc-high-97000-1d",
+    asset: "BTC",
+    direction: "highSell",
+    targetPrice: 97000,
+    settlementDate: "2025-12-05 07:59",
+    daysToSettlement: 1,
+    apr: 210.42,
+    tag: "高卖"
   },
   {
-    id: "eth-1m-3600-call",
+    id: "btc-high-99000-3d",
+    asset: "BTC",
+    direction: "highSell",
+    targetPrice: 99000,
+    settlementDate: "2025-12-07 07:59",
+    daysToSettlement: 3,
+    apr: 156.13
+  },
+  {
+    id: "btc-high-102000-7d",
+    asset: "BTC",
+    direction: "highSell",
+    targetPrice: 102000,
+    settlementDate: "2025-12-11 07:59",
+    daysToSettlement: 7,
+    apr: 120.37
+  },
+  {
+    id: "eth-low-3200-1d",
     asset: "ETH",
-    strike: 3600,
-    daysToExpiry: 30,
-    expiryLabel: "30 天后到期",
-    apr: 12.8,
-    markPrice: 3320,
-    payoffDescription: "长期仓位，锁定更高收益",
-    type: "call"
+    direction: "lowBuy",
+    targetPrice: 3200,
+    settlementDate: "2025-12-05 07:59",
+    daysToSettlement: 1,
+    apr: 285.14
+  },
+  {
+    id: "eth-low-3100-3d",
+    asset: "ETH",
+    direction: "lowBuy",
+    targetPrice: 3100,
+    settlementDate: "2025-12-07 07:59",
+    daysToSettlement: 3,
+    apr: 190.12
+  },
+  {
+    id: "eth-low-3000-7d",
+    asset: "ETH",
+    direction: "lowBuy",
+    targetPrice: 3000,
+    settlementDate: "2025-12-11 07:59",
+    daysToSettlement: 7,
+    apr: 150.32
+  },
+  {
+    id: "eth-high-3450-1d",
+    asset: "ETH",
+    direction: "highSell",
+    targetPrice: 3450,
+    settlementDate: "2025-12-05 07:59",
+    daysToSettlement: 1,
+    apr: 198.42
+  },
+  {
+    id: "eth-high-3600-3d",
+    asset: "ETH",
+    direction: "highSell",
+    targetPrice: 3600,
+    settlementDate: "2025-12-07 07:59",
+    daysToSettlement: 3,
+    apr: 165.75
+  },
+  {
+    id: "eth-high-3800-7d",
+    asset: "ETH",
+    direction: "highSell",
+    targetPrice: 3800,
+    settlementDate: "2025-12-11 07:59",
+    daysToSettlement: 7,
+    apr: 128.9
   }
 ];
