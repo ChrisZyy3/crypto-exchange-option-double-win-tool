@@ -13,6 +13,10 @@ const API_ENDPOINT = "https://api.bybit.com/v5/market/tickers";
 const cache: Record<string, { timestamp: number; payload: IndexPriceResponse }> = {};
 const CACHE_TTL_MS = 3_000;
 
+// Force the Node.js runtime to avoid outbound network restrictions on the edge.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol")?.toUpperCase();
@@ -37,16 +41,39 @@ export async function GET(request: NextRequest) {
       cache: "no-store"
     });
 
+    const upstreamText = await upstreamResponse.text();
+    let json: any;
+    try {
+      json = upstreamText ? JSON.parse(upstreamText) : undefined;
+    } catch (parseError) {
+      console.error("Bybit index price upstream parse error", {
+        symbol,
+        status: upstreamResponse.status,
+        body: upstreamText,
+        parseError
+      });
+      throw new Error("Unable to parse upstream response");
+    }
+
     if (!upstreamResponse.ok) {
+      console.error("Bybit index price upstream error", {
+        symbol,
+        status: upstreamResponse.status,
+        body: json
+      });
       throw new Error(`Upstream error ${upstreamResponse.status}`);
     }
 
-    const json = await upstreamResponse.json();
     const ticker = json?.result?.list?.[0];
     const price = ticker?.indexPrice ? Number(ticker.indexPrice) : undefined;
     const timestamp = typeof json?.time === "number" ? json.time : Date.now();
 
-    if (!price || Number.isNaN(price)) {
+    if (price == null || Number.isNaN(price)) {
+      console.error("Bybit index price upstream malformed payload", {
+        symbol,
+        status: upstreamResponse.status,
+        body: json
+      });
       throw new Error("Malformed upstream response");
     }
 
