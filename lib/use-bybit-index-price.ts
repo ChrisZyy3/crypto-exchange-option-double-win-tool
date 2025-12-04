@@ -52,6 +52,7 @@ export function useBybitIndexPrice(asset: AssetSymbol, options?: UseBybitIndexPr
         }
       } catch (err) {
         if (isMounted) {
+          setData(null);
           setError(err instanceof Error ? err.message : "Unknown error");
         }
       } finally {

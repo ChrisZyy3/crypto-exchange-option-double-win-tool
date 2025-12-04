@@ -11,13 +11,8 @@ import { useBybitIndexPrice } from "@/lib/use-bybit-index-price";
 
 type Language = "en" | "zh";
 
-const defaultSpotPrice: Record<AssetSymbol, number> = {
-  BTC: 61280,
-  ETH: 3320
-};
-
 const formatPrice = (value: number | null | undefined) =>
-  typeof value === "number" ? `$${value.toLocaleString()}` : "-";
+  typeof value === "number" ? `$${value.toLocaleString()}` : "--";
 
 const translations: Record<
   Language,
@@ -25,7 +20,7 @@ const translations: Record<
     hero: Omit<HeroCopy, "stats"> & {
       liveStatus: string;
       loadingStatus: string;
-      fallbackStatus: string;
+      unavailableStatus: string;
       bnbStatus: string;
       labels: { btc: string; eth: string; bnb: string };
     };
@@ -55,7 +50,7 @@ const translations: Record<
       realtimeLabel: "Live index snapshot (proxied from Bybit)",
       liveStatus: "Live price",
       loadingStatus: "Loading live price...",
-      fallbackStatus: "Using fallback snapshot",
+      unavailableStatus: "Price unavailable",
       bnbStatus: "Manual entry",
       labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
@@ -92,7 +87,7 @@ const translations: Record<
       realtimeLabel: "通过代理获取的实时指数价",
       liveStatus: "实时价格",
       loadingStatus: "正在获取价格...",
-      fallbackStatus: "使用预设价格",
+      unavailableStatus: "暂无价格",
       bnbStatus: "手动录入",
       labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
@@ -141,25 +136,25 @@ export default function OptionsPage() {
     error: ethError
   } = useBybitIndexPrice("ETH");
 
-  const priceLookup: Record<AssetSymbol, number> = {
-    BTC: btcIndex?.price ?? defaultSpotPrice.BTC,
-    ETH: ethIndex?.price ?? defaultSpotPrice.ETH
+  const priceLookup: Record<AssetSymbol, number | null> = {
+    BTC: btcIndex?.price ?? null,
+    ETH: ethIndex?.price ?? null
   };
 
   const assetStatuses: Record<AssetSymbol, string> = {
-    BTC: isBtcLoading ? t.hero.loadingStatus : btcIndex && !btcError ? t.hero.liveStatus : t.hero.fallbackStatus,
-    ETH: isEthLoading ? t.hero.loadingStatus : ethIndex && !ethError ? t.hero.liveStatus : t.hero.fallbackStatus
+    BTC: isBtcLoading ? t.hero.loadingStatus : btcIndex && !btcError ? t.hero.liveStatus : t.hero.unavailableStatus,
+    ETH: isEthLoading ? t.hero.loadingStatus : ethIndex && !ethError ? t.hero.liveStatus : t.hero.unavailableStatus
   };
 
   const heroStats: HeroCopy["stats"] = [
     {
       label: t.hero.labels.btc,
-      value: formatPrice(btcIndex?.price ?? defaultSpotPrice.BTC),
+      value: formatPrice(btcIndex?.price),
       status: assetStatuses.BTC
     },
     {
       label: t.hero.labels.eth,
-      value: formatPrice(ethIndex?.price ?? defaultSpotPrice.ETH),
+      value: formatPrice(ethIndex?.price),
       status: assetStatuses.ETH
     },
     {
@@ -188,6 +183,7 @@ export default function OptionsPage() {
   }, [asset, direction, tenor]);
 
   const currentSpot = priceLookup[asset];
+  const currentSpotLabel = typeof currentSpot === "number" ? currentSpot.toLocaleString() : "--";
   const isAssetLoading = asset === "BTC" ? isBtcLoading : isEthLoading;
 
   return (
@@ -223,7 +219,7 @@ export default function OptionsPage() {
             </div>
             <div className="text-sm text-slate-600">
               {t.controls.assetPrice}{" "}
-              <span className="font-semibold text-slate-900">{currentSpot.toLocaleString()} USDT</span>
+              <span className="font-semibold text-slate-900">{currentSpotLabel} USDT</span>
               <span className="ml-2 text-xs text-slate-500">
                 {isAssetLoading ? t.controls.assetPriceLoading : assetStatuses[asset]}
               </span>
@@ -292,13 +288,18 @@ export default function OptionsPage() {
 
 interface OptionListRowProps {
   item: (typeof optionMarkets)[number];
-  currentSpot: number;
+  currentSpot: number | null;
   language: Language;
 }
 
 function OptionListRow({ item, currentSpot, language }: OptionListRowProps) {
-  const distancePercent = ((item.targetPrice - currentSpot) / currentSpot) * 100;
-  const distanceLabel = `${distancePercent >= 0 ? "+" : ""}${distancePercent.toFixed(2)}%`;
+  const hasSpot = typeof currentSpot === "number";
+  const distancePercent = hasSpot ? ((item.targetPrice - currentSpot) / currentSpot) * 100 : null;
+  const distanceLabel =
+    hasSpot && distancePercent !== null
+      ? `${distancePercent >= 0 ? "+" : ""}${distancePercent.toFixed(2)}%`
+      : "--";
+  const currentSpotLabel = hasSpot ? currentSpot.toLocaleString() : "--";
   const t = translations[language];
 
   return (
@@ -308,7 +309,7 @@ function OptionListRow({ item, currentSpot, language }: OptionListRowProps) {
           <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
             {item.targetPrice.toLocaleString()} USDT
           </div>
-          <p className="text-xs text-slate-500">{`${language === "en" ? "Spot" : "标的价"} ${currentSpot.toLocaleString()} USDT`}</p>
+          <p className="text-xs text-slate-500">{`${language === "en" ? "Spot" : "标的价"} ${currentSpotLabel} USDT`}</p>
         </div>
         <div className="text-sm font-semibold text-slate-900">{distanceLabel}</div>
         <div className="text-sm text-slate-800">{item.settlementDate}</div>
@@ -345,7 +346,7 @@ function OptionListRow({ item, currentSpot, language }: OptionListRowProps) {
           </div>
           <div className="rounded-lg bg-slate-50 px-3 py-2 text-right">
             <p className="text-xs text-slate-500">{language === "en" ? "Spot" : "标的"}</p>
-            <p className="font-semibold text-slate-900">{currentSpot.toLocaleString()} USDT</p>
+            <p className="font-semibold text-slate-900">{currentSpotLabel} USDT</p>
           </div>
         </div>
         <Button className="w-full bg-amber-500 text-white hover:bg-amber-600">{t.table.buyNow}</Button>

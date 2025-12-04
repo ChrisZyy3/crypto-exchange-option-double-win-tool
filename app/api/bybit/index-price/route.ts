@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const now = Date.now();
   const cached = cache[symbol];
   if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    console.log("Bybit index price success (cache)", { symbol, payload: cached.payload });
     return NextResponse.json(cached.payload);
   }
 
@@ -52,9 +53,10 @@ export async function GET(request: NextRequest) {
     const payload: IndexPriceResponse = { symbol, price, timestamp };
     cache[symbol] = { timestamp: now, payload };
 
+    console.log("Bybit index price success", { symbol, payload });
     return NextResponse.json(payload);
   } catch (error) {
-    console.error("Failed to fetch Bybit index price", error);
+    console.error("Failed to fetch Bybit index price", { symbol, error });
     return NextResponse.json({ error: "Unable to fetch index price" }, { status: 502 });
   }
 }
