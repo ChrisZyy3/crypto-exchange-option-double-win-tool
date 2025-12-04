@@ -6,6 +6,13 @@ interface IndexPriceResponse {
   timestamp: number;
 }
 
+interface BybitTickerResponse {
+  result?: {
+    list?: Array<{ indexPrice?: string }>;
+  };
+  time?: number;
+}
+
 const SUPPORTED_SYMBOLS = new Set(["BTCUSDT", "ETHUSDT"]);
 const API_ENDPOINT = "https://api.bybit.com/v5/market/tickers";
 
@@ -42,9 +49,10 @@ export async function GET(request: NextRequest) {
     });
 
     const upstreamText = await upstreamResponse.text();
-    let json: any;
+    let json: BybitTickerResponse | undefined;
     try {
-      json = upstreamText ? JSON.parse(upstreamText) : undefined;
+      const parsed = upstreamText ? JSON.parse(upstreamText) : undefined;
+      json = parsed && typeof parsed === "object" ? (parsed as BybitTickerResponse) : undefined;
     } catch (parseError) {
       console.error("Bybit index price upstream parse error", {
         symbol,
