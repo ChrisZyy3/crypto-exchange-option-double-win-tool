@@ -13,7 +13,7 @@ interface BybitTickerResponse {
   time?: number;
 }
 
-const SUPPORTED_SYMBOLS = new Set(["BTCUSDT", "ETHUSDT"]);
+const SUPPORTED_SYMBOLS = new Set(["BTCUSDT", "ETHUSDT", "BNBUSDT"]);
 const API_ENDPOINT = "https://api.bybit.com/v5/market/tickers";
 
 // Simple in-memory cache to avoid hammering the upstream endpoint when users poll aggressively.
@@ -29,10 +29,7 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get("symbol")?.toUpperCase();
 
   if (!symbol || !SUPPORTED_SYMBOLS.has(symbol)) {
-    return NextResponse.json(
-      { error: "Unsupported or missing symbol. Try BTCUSDT or ETHUSDT." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Unsupported or missing symbol." }, { status: 400 });
   }
 
   const now = Date.now();

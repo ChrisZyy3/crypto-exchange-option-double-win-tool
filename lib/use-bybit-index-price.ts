@@ -16,7 +16,8 @@ interface UseBybitIndexPriceOptions {
 
 const symbolMap: Record<AssetSymbol, string> = {
   BTC: "BTCUSDT",
-  ETH: "ETHUSDT"
+  ETH: "ETHUSDT",
+  BNB: "BNBUSDT"
 };
 
 export function useBybitIndexPrice(asset: AssetSymbol, options?: UseBybitIndexPriceOptions) {

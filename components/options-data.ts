@@ -1,4 +1,4 @@
-export type AssetSymbol = "BTC" | "ETH";
+export type AssetSymbol = "BTC" | "ETH" | "BNB";
 export type OptionDirection = "lowBuy" | "highSell";
 
 export interface OptionProduct {
@@ -24,7 +24,8 @@ export interface OptionMarketItem {
 
 export const assetSpotPrice: Record<AssetSymbol, number> = {
   BTC: 61280,
-  ETH: 3320
+  ETH: 3320,
+  BNB: 560
 };
 
 export const optionMarkets: OptionMarketItem[] = [

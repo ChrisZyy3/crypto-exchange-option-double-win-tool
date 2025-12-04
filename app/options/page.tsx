@@ -21,7 +21,6 @@ const translations: Record<
       liveStatus: string;
       loadingStatus: string;
       unavailableStatus: string;
-      bnbStatus: string;
       labels: { btc: string; eth: string; bnb: string };
     };
     controls: {
@@ -51,7 +50,6 @@ const translations: Record<
       liveStatus: "Live price",
       loadingStatus: "Loading live price...",
       unavailableStatus: "Price unavailable",
-      bnbStatus: "Manual entry",
       labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
     controls: {
@@ -88,7 +86,6 @@ const translations: Record<
       liveStatus: "实时价格",
       loadingStatus: "正在获取价格...",
       unavailableStatus: "暂无价格",
-      bnbStatus: "手动录入",
       labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
     controls: {
@@ -135,15 +132,22 @@ export default function OptionsPage() {
     isLoading: isEthLoading,
     error: ethError
   } = useBybitIndexPrice("ETH");
+  const {
+    data: bnbIndex,
+    isLoading: isBnbLoading,
+    error: bnbError
+  } = useBybitIndexPrice("BNB");
 
   const priceLookup: Record<AssetSymbol, number | null> = {
     BTC: btcIndex?.price ?? null,
-    ETH: ethIndex?.price ?? null
+    ETH: ethIndex?.price ?? null,
+    BNB: bnbIndex?.price ?? null
   };
 
   const assetStatuses: Record<AssetSymbol, string> = {
     BTC: isBtcLoading ? t.hero.loadingStatus : btcIndex && !btcError ? t.hero.liveStatus : t.hero.unavailableStatus,
-    ETH: isEthLoading ? t.hero.loadingStatus : ethIndex && !ethError ? t.hero.liveStatus : t.hero.unavailableStatus
+    ETH: isEthLoading ? t.hero.loadingStatus : ethIndex && !ethError ? t.hero.liveStatus : t.hero.unavailableStatus,
+    BNB: isBnbLoading ? t.hero.loadingStatus : bnbIndex && !bnbError ? t.hero.liveStatus : t.hero.unavailableStatus
   };
 
   const heroStats: HeroCopy["stats"] = [
@@ -159,8 +163,8 @@ export default function OptionsPage() {
     },
     {
       label: t.hero.labels.bnb,
-      value: formatPrice(560),
-      status: t.hero.bnbStatus
+      value: formatPrice(bnbIndex?.price),
+      status: assetStatuses.BNB
     }
   ];
 
@@ -173,18 +177,23 @@ export default function OptionsPage() {
     stats: heroStats
   };
 
+  const currentSpot = priceLookup[asset];
+  const currentSpotLabel = typeof currentSpot === "number" ? currentSpot.toLocaleString() : "--";
+  const isAssetLoading =
+    asset === "BTC" ? isBtcLoading : asset === "ETH" ? isEthLoading : isBnbLoading;
+
   const products = useMemo(() => {
+    if (typeof currentSpot !== "number") {
+      return [];
+    }
+
     return optionMarkets.filter((item) => {
       const matchesAsset = item.asset === asset;
       const matchesDirection = item.direction === direction;
       const matchesTenor = tenor === "all" ? true : item.daysToSettlement === Number(tenor);
       return matchesAsset && matchesDirection && matchesTenor;
     });
-  }, [asset, direction, tenor]);
-
-  const currentSpot = priceLookup[asset];
-  const currentSpotLabel = typeof currentSpot === "number" ? currentSpot.toLocaleString() : "--";
-  const isAssetLoading = asset === "BTC" ? isBtcLoading : isEthLoading;
+  }, [asset, direction, tenor, currentSpot]);
 
   return (
     <div className="flex min-h-screen flex-col">
