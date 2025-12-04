@@ -1,6 +1,17 @@
 export type AssetSymbol = "BTC" | "ETH";
 export type OptionDirection = "lowBuy" | "highSell";
 
+export interface OptionProduct {
+  asset: AssetSymbol;
+  type: "call" | "put";
+  strike: number;
+  expiryLabel: string;
+  apr: number;
+  markPrice: number;
+  daysToExpiry: number;
+  payoffDescription: string;
+}
+
 export interface OptionMarketItem {
   id: string;
   asset: AssetSymbol;
