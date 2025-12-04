@@ -1,0 +1,136 @@
+:root {
+  color-scheme: light;
+  --bg: #0b1021;
+  --text: #f1f5f9;
+  --muted: #cbd5e1;
+  --accent: #06b6d4;
+  --surface: #111827;
+  --border: #1f2937;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.08), transparent 25%),
+    radial-gradient(circle at 80% 0%, rgba(94, 234, 212, 0.06), transparent 20%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.app-header h1 {
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.app-main {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab-button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.35));
+  color: var(--text);
+  border-color: rgba(6, 182, 212, 0.65);
+  box-shadow: 0 10px 40px rgba(6, 182, 212, 0.25);
+}
+
+.section-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: rgba(17, 24, 39, 0.7);
+}
+
+.section-card h3 {
+  margin: 0 0 8px;
+}
+
+.market-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.market-grid th,
+.market-grid td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.market-grid th {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.12);
+  color: var(--text);
+  border: 1px solid rgba(6, 182, 212, 0.5);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.status-line {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 12px 0;
+}
+
+.error {
+  color: #fca5a5;
+}
+
+.loader {
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .market-grid th,
+  .market-grid td {
+    font-size: 13px;
+  }
+}
