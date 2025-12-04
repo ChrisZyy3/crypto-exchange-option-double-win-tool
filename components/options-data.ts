@@ -23,73 +23,73 @@ export interface OptionMarketItem {
 }
 
 export const assetSpotPrice: Record<AssetSymbol, number> = {
-  BTC: 94001.12,
-  ETH: 3320.45
+  BTC: 61280,
+  ETH: 3320
 };
 
 export const optionMarkets: OptionMarketItem[] = [
   {
-    id: "btc-low-94000-1d",
+    id: "btc-low-60000-1d",
     asset: "BTC",
     direction: "lowBuy",
-    targetPrice: 94000,
+    targetPrice: 60000,
     settlementDate: "2025-12-05 07:59",
     daysToSettlement: 1,
-    apr: 376.86
+    apr: 82.15
   },
   {
-    id: "btc-low-93000-1d",
+    id: "btc-low-59500-1d",
     asset: "BTC",
     direction: "lowBuy",
-    targetPrice: 93000,
+    targetPrice: 59500,
     settlementDate: "2025-12-05 07:59",
     daysToSettlement: 1,
-    apr: 241.93
+    apr: 68.74
   },
   {
-    id: "btc-low-92000-1d",
+    id: "btc-low-59000-1d",
     asset: "BTC",
     direction: "lowBuy",
-    targetPrice: 92000,
+    targetPrice: 59000,
     settlementDate: "2025-12-05 07:59",
     daysToSettlement: 1,
-    apr: 180.25
+    apr: 55.42
   },
   {
-    id: "btc-low-95000-3d",
+    id: "btc-low-60500-3d",
     asset: "BTC",
     direction: "lowBuy",
-    targetPrice: 95000,
+    targetPrice: 60500,
     settlementDate: "2025-12-07 07:59",
     daysToSettlement: 3,
-    apr: 148.55
+    apr: 44.91
   },
   {
-    id: "btc-high-97000-1d",
+    id: "btc-high-62500-1d",
     asset: "BTC",
     direction: "highSell",
-    targetPrice: 97000,
+    targetPrice: 62500,
     settlementDate: "2025-12-05 07:59",
     daysToSettlement: 1,
-    apr: 210.42
+    apr: 91.62
   },
   {
-    id: "btc-high-99000-3d",
+    id: "btc-high-64000-3d",
     asset: "BTC",
     direction: "highSell",
-    targetPrice: 99000,
+    targetPrice: 64000,
     settlementDate: "2025-12-07 07:59",
     daysToSettlement: 3,
-    apr: 156.13
+    apr: 72.48
   },
   {
-    id: "btc-high-102000-7d",
+    id: "btc-high-66000-7d",
     asset: "BTC",
     direction: "highSell",
-    targetPrice: 102000,
+    targetPrice: 66000,
     settlementDate: "2025-12-11 07:59",
     daysToSettlement: 7,
-    apr: 120.37
+    apr: 58.12
   },
   {
     id: "eth-low-3200-1d",

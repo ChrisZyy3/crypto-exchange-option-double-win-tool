@@ -10,6 +10,14 @@ import { Card } from "@/components/ui/card";
 
 type Language = "en" | "zh";
 
+const assetPerformance = {
+  BTC: { price: 61280, status: { en: "Trending well", zh: "趋势良好" } },
+  ETH: { price: 3320, status: { en: "Trending well", zh: "趋势良好" } },
+  BNB: { price: 560, status: { en: "Stable", zh: "稳定" } }
+};
+
+const formatPrice = (value: number) => `$${value.toLocaleString()}`;
+
 const translations: Record<
   Language,
   {
@@ -35,12 +43,12 @@ const translations: Record<
       title: "Choose BTC / ETH options with dual-earn style experience",
       subtitle:
         "Mobile-friendly ordering. All signing and risk checks run through a Next.js API Route proxy so secrets stay off the browser.",
-      performanceLabel: "Performance snapshot",
-      realtimeLabel: "Index price placeholder",
+      performanceLabel: "Asset performance",
+      realtimeLabel: "Live index snapshot",
       stats: [
-        { label: "BTC", value: "$61,280", status: "Trending up" },
-        { label: "ETH", value: "$3,320", status: "Trending up" },
-        { label: "Yield", value: "10%+", status: "Stable" }
+        { label: "BTC", value: formatPrice(assetPerformance.BTC.price), status: assetPerformance.BTC.status.en },
+        { label: "ETH", value: formatPrice(assetPerformance.ETH.price), status: assetPerformance.ETH.status.en },
+        { label: "BNB", value: formatPrice(assetPerformance.BNB.price), status: assetPerformance.BNB.status.en }
       ]
     },
     controls: {
@@ -74,9 +82,9 @@ const translations: Record<
       performanceLabel: "资产表现",
       realtimeLabel: "实时指数价占位",
       stats: [
-        { label: "BTC", value: "$61,280", status: "趋势良好" },
-        { label: "ETH", value: "$3,320", status: "趋势良好" },
-        { label: "稳定收益", value: "10%+", status: "稳健" }
+        { label: "BTC", value: formatPrice(assetPerformance.BTC.price), status: assetPerformance.BTC.status.zh },
+        { label: "ETH", value: formatPrice(assetPerformance.ETH.price), status: assetPerformance.ETH.status.zh },
+        { label: "BNB", value: formatPrice(assetPerformance.BNB.price), status: assetPerformance.BNB.status.zh }
       ]
     },
     controls: {
