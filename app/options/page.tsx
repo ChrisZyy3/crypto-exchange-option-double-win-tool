@@ -4,26 +4,28 @@ import { useMemo, useState } from "react";
 
 import Hero from "@/components/sections/hero";
 import type { HeroCopy } from "@/components/sections/hero";
-import { assetSpotPrice, optionMarkets, type AssetSymbol, type OptionDirection } from "@/components/options-data";
+import { optionMarkets, type AssetSymbol, type OptionDirection } from "@/components/options-data";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useBybitIndexPrice } from "@/lib/use-bybit-index-price";
 
 type Language = "en" | "zh";
 
-const assetPerformance = {
-  BTC: { price: 61280, status: { en: "Trending well", zh: "趋势良好" } },
-  ETH: { price: 3320, status: { en: "Trending well", zh: "趋势良好" } },
-  BNB: { price: 560, status: { en: "Stable", zh: "稳定" } }
-};
-
-const formatPrice = (value: number) => `$${value.toLocaleString()}`;
+const formatPrice = (value: number | null | undefined) =>
+  typeof value === "number" ? `$${value.toLocaleString()}` : "--";
 
 const translations: Record<
   Language,
   {
-    hero: HeroCopy;
+    hero: Omit<HeroCopy, "stats"> & {
+      liveStatus: string;
+      loadingStatus: string;
+      unavailableStatus: string;
+      labels: { btc: string; eth: string; bnb: string };
+    };
     controls: {
       assetPrice: string;
+      assetPriceLoading: string;
       directionTabs: { value: OptionDirection; label: string; description: string }[];
       tenorLabel: string;
       tenorFilters: { label: string; value: string }[];
@@ -44,15 +46,15 @@ const translations: Record<
       subtitle:
         "Mobile-friendly ordering. All signing and risk checks run through a Next.js API Route proxy so secrets stay off the browser.",
       performanceLabel: "Asset performance",
-      realtimeLabel: "Live index snapshot",
-      stats: [
-        { label: "BTC", value: formatPrice(assetPerformance.BTC.price), status: assetPerformance.BTC.status.en },
-        { label: "ETH", value: formatPrice(assetPerformance.ETH.price), status: assetPerformance.ETH.status.en },
-        { label: "BNB", value: formatPrice(assetPerformance.BNB.price), status: assetPerformance.BNB.status.en }
-      ]
+      realtimeLabel: "Live index snapshot (proxied from Bybit)",
+      liveStatus: "Live price",
+      loadingStatus: "Loading live price...",
+      unavailableStatus: "Price unavailable",
+      labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
     controls: {
       assetPrice: "Index price",
+      assetPriceLoading: "Loading price...",
       directionTabs: [
         { value: "lowBuy", label: "Buy Low", description: "Bid below spot to earn premium" },
         { value: "highSell", label: "Sell High", description: "Offer above spot to earn premium" }
@@ -80,15 +82,15 @@ const translations: Record<
       title: "即刻选择 BTC / ETH 期权，享受双币宝式收益体验",
       subtitle: "前端优先、移动端友好的下单体验。所有签名与风控通过 Next.js API Route 代为处理，确保密钥不落地浏览器。",
       performanceLabel: "资产表现",
-      realtimeLabel: "实时指数价占位",
-      stats: [
-        { label: "BTC", value: formatPrice(assetPerformance.BTC.price), status: assetPerformance.BTC.status.zh },
-        { label: "ETH", value: formatPrice(assetPerformance.ETH.price), status: assetPerformance.ETH.status.zh },
-        { label: "BNB", value: formatPrice(assetPerformance.BNB.price), status: assetPerformance.BNB.status.zh }
-      ]
+      realtimeLabel: "通过代理获取的实时指数价",
+      liveStatus: "实时价格",
+      loadingStatus: "正在获取价格...",
+      unavailableStatus: "暂无价格",
+      labels: { btc: "BTC", eth: "ETH", bnb: "BNB" }
     },
     controls: {
       assetPrice: "指数价",
+      assetPriceLoading: "获取中...",
       directionTabs: [
         { value: "lowBuy", label: "低买", description: "低于当前价格买入，赚取权利金" },
         { value: "highSell", label: "高卖", description: "高于当前价格卖出，赚取权利金" }
@@ -120,16 +122,78 @@ export default function OptionsPage() {
 
   const t = translations[language];
 
+  const {
+    data: btcIndex,
+    isLoading: isBtcLoading,
+    error: btcError
+  } = useBybitIndexPrice("BTC");
+  const {
+    data: ethIndex,
+    isLoading: isEthLoading,
+    error: ethError
+  } = useBybitIndexPrice("ETH");
+  const {
+    data: bnbIndex,
+    isLoading: isBnbLoading,
+    error: bnbError
+  } = useBybitIndexPrice("BNB");
+
+  const priceLookup: Record<AssetSymbol, number | null> = {
+    BTC: btcIndex?.price ?? null,
+    ETH: ethIndex?.price ?? null,
+    BNB: bnbIndex?.price ?? null
+  };
+
+  const assetStatuses: Record<AssetSymbol, string> = {
+    BTC: isBtcLoading ? t.hero.loadingStatus : btcIndex && !btcError ? t.hero.liveStatus : t.hero.unavailableStatus,
+    ETH: isEthLoading ? t.hero.loadingStatus : ethIndex && !ethError ? t.hero.liveStatus : t.hero.unavailableStatus,
+    BNB: isBnbLoading ? t.hero.loadingStatus : bnbIndex && !bnbError ? t.hero.liveStatus : t.hero.unavailableStatus
+  };
+
+  const heroStats: HeroCopy["stats"] = [
+    {
+      label: t.hero.labels.btc,
+      value: formatPrice(btcIndex?.price),
+      status: assetStatuses.BTC
+    },
+    {
+      label: t.hero.labels.eth,
+      value: formatPrice(ethIndex?.price),
+      status: assetStatuses.ETH
+    },
+    {
+      label: t.hero.labels.bnb,
+      value: formatPrice(bnbIndex?.price),
+      status: assetStatuses.BNB
+    }
+  ];
+
+  const heroCopy: HeroCopy = {
+    badge: t.hero.badge,
+    title: t.hero.title,
+    subtitle: t.hero.subtitle,
+    performanceLabel: t.hero.performanceLabel,
+    realtimeLabel: t.hero.realtimeLabel,
+    stats: heroStats
+  };
+
+  const currentSpot = priceLookup[asset];
+  const currentSpotLabel = typeof currentSpot === "number" ? currentSpot.toLocaleString() : "--";
+  const isAssetLoading =
+    asset === "BTC" ? isBtcLoading : asset === "ETH" ? isEthLoading : isBnbLoading;
+
   const products = useMemo(() => {
+    if (typeof currentSpot !== "number") {
+      return [];
+    }
+
     return optionMarkets.filter((item) => {
       const matchesAsset = item.asset === asset;
       const matchesDirection = item.direction === direction;
       const matchesTenor = tenor === "all" ? true : item.daysToSettlement === Number(tenor);
       return matchesAsset && matchesDirection && matchesTenor;
     });
-  }, [asset, direction, tenor]);
-
-  const currentSpot = assetSpotPrice[asset];
+  }, [asset, direction, tenor, currentSpot]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -142,7 +206,7 @@ export default function OptionsPage() {
           {t.controls.languageToggle}
         </button>
       </div>
-      <Hero copy={t.hero} />
+      <Hero copy={heroCopy} />
       <section className="container mt-8 flex flex-col gap-5 pb-14">
         <Card className="border border-slate-200/80 bg-white/90 p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -163,7 +227,11 @@ export default function OptionsPage() {
               ))}
             </div>
             <div className="text-sm text-slate-600">
-              {t.controls.assetPrice} {currentSpot.toLocaleString()} USDT
+              {t.controls.assetPrice}{" "}
+              <span className="font-semibold text-slate-900">{currentSpotLabel} USDT</span>
+              <span className="ml-2 text-xs text-slate-500">
+                {isAssetLoading ? t.controls.assetPriceLoading : assetStatuses[asset]}
+              </span>
             </div>
           </div>
 
@@ -229,13 +297,18 @@ export default function OptionsPage() {
 
 interface OptionListRowProps {
   item: (typeof optionMarkets)[number];
-  currentSpot: number;
+  currentSpot: number | null;
   language: Language;
 }
 
 function OptionListRow({ item, currentSpot, language }: OptionListRowProps) {
-  const distancePercent = ((item.targetPrice - currentSpot) / currentSpot) * 100;
-  const distanceLabel = `${distancePercent >= 0 ? "+" : ""}${distancePercent.toFixed(2)}%`;
+  const hasSpot = typeof currentSpot === "number";
+  const distancePercent = hasSpot ? ((item.targetPrice - currentSpot) / currentSpot) * 100 : null;
+  const distanceLabel =
+    hasSpot && distancePercent !== null
+      ? `${distancePercent >= 0 ? "+" : ""}${distancePercent.toFixed(2)}%`
+      : "--";
+  const currentSpotLabel = hasSpot ? currentSpot.toLocaleString() : "--";
   const t = translations[language];
 
   return (
@@ -245,7 +318,7 @@ function OptionListRow({ item, currentSpot, language }: OptionListRowProps) {
           <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
             {item.targetPrice.toLocaleString()} USDT
           </div>
-          <p className="text-xs text-slate-500">{`${language === "en" ? "Spot" : "标的价"} ${currentSpot.toLocaleString()} USDT`}</p>
+          <p className="text-xs text-slate-500">{`${language === "en" ? "Spot" : "标的价"} ${currentSpotLabel} USDT`}</p>
         </div>
         <div className="text-sm font-semibold text-slate-900">{distanceLabel}</div>
         <div className="text-sm text-slate-800">{item.settlementDate}</div>
@@ -282,7 +355,7 @@ function OptionListRow({ item, currentSpot, language }: OptionListRowProps) {
           </div>
           <div className="rounded-lg bg-slate-50 px-3 py-2 text-right">
             <p className="text-xs text-slate-500">{language === "en" ? "Spot" : "标的"}</p>
-            <p className="font-semibold text-slate-900">{currentSpot.toLocaleString()} USDT</p>
+            <p className="font-semibold text-slate-900">{currentSpotLabel} USDT</p>
           </div>
         </div>
         <Button className="w-full bg-amber-500 text-white hover:bg-amber-600">{t.table.buyNow}</Button>

@@ -1,0 +1,94 @@
+import { NextRequest, NextResponse } from "next/server";
+
+interface IndexPriceResponse {
+  symbol: string;
+  price: number;
+  timestamp: number;
+}
+
+interface BybitTickerResponse {
+  result?: {
+    list?: Array<{ indexPrice?: string }>;
+  };
+  time?: number;
+}
+
+const SUPPORTED_SYMBOLS = new Set(["BTCUSDT", "ETHUSDT", "BNBUSDT"]);
+const API_ENDPOINT = "https://api.bybit.com/v5/market/tickers";
+
+// Simple in-memory cache to avoid hammering the upstream endpoint when users poll aggressively.
+const cache: Record<string, { timestamp: number; payload: IndexPriceResponse }> = {};
+const CACHE_TTL_MS = 3_000;
+
+// Force the Node.js runtime to avoid outbound network restrictions on the edge.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const symbol = searchParams.get("symbol")?.toUpperCase();
+
+  if (!symbol || !SUPPORTED_SYMBOLS.has(symbol)) {
+    return NextResponse.json({ error: "Unsupported or missing symbol." }, { status: 400 });
+  }
+
+  const now = Date.now();
+  const cached = cache[symbol];
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    console.log("Bybit index price success (cache)", { symbol, payload: cached.payload });
+    return NextResponse.json(cached.payload);
+  }
+
+  try {
+    const upstreamResponse = await fetch(`${API_ENDPOINT}?category=linear&symbol=${symbol}`, {
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store"
+    });
+
+    const upstreamText = await upstreamResponse.text();
+    let json: BybitTickerResponse | undefined;
+    try {
+      const parsed = upstreamText ? JSON.parse(upstreamText) : undefined;
+      json = parsed && typeof parsed === "object" ? (parsed as BybitTickerResponse) : undefined;
+    } catch (parseError) {
+      console.error("Bybit index price upstream parse error", {
+        symbol,
+        status: upstreamResponse.status,
+        body: upstreamText,
+        parseError
+      });
+      throw new Error("Unable to parse upstream response");
+    }
+
+    if (!upstreamResponse.ok) {
+      console.error("Bybit index price upstream error", {
+        symbol,
+        status: upstreamResponse.status,
+        body: json
+      });
+      throw new Error(`Upstream error ${upstreamResponse.status}`);
+    }
+
+    const ticker = json?.result?.list?.[0];
+    const price = ticker?.indexPrice ? Number(ticker.indexPrice) : undefined;
+    const timestamp = typeof json?.time === "number" ? json.time : Date.now();
+
+    if (price == null || Number.isNaN(price)) {
+      console.error("Bybit index price upstream malformed payload", {
+        symbol,
+        status: upstreamResponse.status,
+        body: json
+      });
+      throw new Error("Malformed upstream response");
+    }
+
+    const payload: IndexPriceResponse = { symbol, price, timestamp };
+    cache[symbol] = { timestamp: now, payload };
+
+    console.log("Bybit index price success", { symbol, payload });
+    return NextResponse.json(payload);
+  } catch (error) {
+    console.error("Failed to fetch Bybit index price", { symbol, error });
+    return NextResponse.json({ error: "Unable to fetch index price" }, { status: 502 });
+  }
+}
